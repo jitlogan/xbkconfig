@@ -25,19 +25,15 @@ class XBKconfig
     end
 
     def self.parse(string = File.read(File.expand_path("#{ENV['HOME']}/.xbindkeysrc")))
-        @list = XBKconfig::NodeList.new
+        list = XBKconfig::NodeList.new
         self::Transform.new.apply(self::Parser.new.parse(string)).each do |bindEntry|
             @list.add(XBKconfig::Node.new(bindEntry[:command], bindEtnry[:bind]))    
         end
     end
 
-    class NodeList
-        def initialize
-            @list = []
-        end
-
+    class NodeList << Array
         def add(node)
-            @list << node
+            self << node
         end
     end
 
