@@ -18,20 +18,19 @@ class XBKconfig
         root(:main)
     end
 
-    class Transfrom < Parslet::Transform
-        rule(:bindEntry => { :command => simple(:c), :bind => simple(:b) } } { { command: String(c), bind: String(b) }}
-    end
-
+    class Transform < Parslet::Transform
+        rule(:bindEntry => { :command => simple(:c), :bind => simple(:b) } ) { { command: String(c), bind: String(b) } }
     end
 
     def self.parse(string = File.read(File.expand_path("#{ENV['HOME']}/.xbindkeysrc")))
         list = XBKconfig::NodeList.new
         self::Transform.new.apply(self::Parser.new.parse(string)).each do |bindEntry|
-            @list.add(XBKconfig::Node.new(bindEntry[:command], bindEtnry[:bind]))    
+            list.add(XBKconfig::Node.new(bindEntry[:command], bindEntry[:bind]))    
         end
+        return list
     end
 
-    class NodeList << Array
+    class NodeList < Array
         def add(node)
             self << node
         end
