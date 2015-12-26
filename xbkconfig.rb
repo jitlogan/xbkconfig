@@ -32,7 +32,13 @@ class XBKconfig
 
     class NodeList < Array
         def add(node)
-            self << node
+            if !node.kind_of?(XBKconfig::Node)
+                raise TypeError
+            elsif node.bind.nil?
+                raise RuntimeError
+            else
+               self << node
+            end
         end
     end
 
