@@ -40,6 +40,10 @@ class XBKconfig
                self << node
             end
         end
+
+        def binds
+            self.collect {|node| node.bind}
+        end
     end
 
     class Node
@@ -51,6 +55,8 @@ class XBKconfig
         end
 
         def initialize(command = nil, bind = nil)
+            bind = sanitizeBind(bind)
+
             if command.nil?
                 @command, @bind = [command, bind]
             else
@@ -61,6 +67,9 @@ class XBKconfig
     private
         def surroundCommand(command)
             '"' + command + '"'
+        end
+        def sanitizeBind(bind)
+            bind.strip 
         end
     end
 

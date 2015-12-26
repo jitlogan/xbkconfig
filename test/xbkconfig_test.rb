@@ -33,4 +33,16 @@ class TestXBKconfig < Minitest::Test
         assert_equal(1, @nodeList.add(@node).size)
     end
 
+    def test_responde_to_binds
+        assert_respond_to(@nodeList, :binds)
+    end
+
+    def test_binds_return_array
+        assert_instance_of(Array,  @nodeList.binds)
+    end
+
+    def test_binds_return_binds
+        assert_equal(["bind"], @nodeList.add(@node).binds)
+    end
+
 end
