@@ -10,7 +10,7 @@ class XBKconfig
         rule(:comment) { str("#").repeat(1) >> (newline.absent? >> any).repeat >> newline.repeat }
 
         rule(:doubleQuote) { str('"') }
-        rule(:commandLine) { doubleQuote >> ( (newline.absent? >> doubleQuote.absent? >> any).repeat ).as(:command) >> doubleQuote >> match["\s"].repeat >> newline }
+        rule(:commandLine) { (doubleQuote >> (newline.absent? >> doubleQuote.absent? >> any).repeat >> doubleQuote).as(:command) >> match["\s"].repeat >> newline }
 
         rule(:bind) { (newline.absent? >> doubleQuote.absent? >> any).repeat.as(:bind) >> newline.repeat }
         rule(:bindEntry) { ( commandLine >> bind ).as(:bindEntry) }
@@ -51,17 +51,15 @@ class XBKconfig
         attr_reader :command
 
         def command=(command)
-            @command = surroundCommand(command)
+            unless command.match(/^\".*\"$/)
+                @command = surroundCommand(command)
+            end
         end
 
         def initialize(command = nil, bind = nil)
             bind = sanitizeBind(bind)
 
-            if command.nil?
-                @command, @bind = [command, bind]
-            else
-                @command, @bind = [surroundCommand(command), bind]
-            end
+            @command, @bind = [command, bind]
         end
 
     private
