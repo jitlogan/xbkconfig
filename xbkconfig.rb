@@ -33,9 +33,7 @@ class XBKconfig
     class NodeList < Array
         def add(node)
             if !node.kind_of?(XBKconfig::Node)
-                raise TypeError
-            elsif node.bind.nil?
-                raise RuntimeError
+                raise TypeError, "no implicit conversion of #{node.class} into XBKconfig::Node"
             else
                self << node
             end
