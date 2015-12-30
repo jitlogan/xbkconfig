@@ -51,26 +51,17 @@ class XBKconfig
         attr_reader :command
 
         def command=(command)
-            @command = surroundCommand(command) unless surrounded?(command)
+            @command = surroundCommand(command)
         end
 
         def initialize(command = "", bind)
-            bind = sanitizeBind(bind)
+            @command, @bind = [surroundCommand(command), sanitizeBind(bind)]
 
-            if command.empty? || !surrounded?(command)
-                @command, @bind = [surroundCommand(command), bind]
-            else
-                @command, @bind = [command, bind]
-            end
         end
 
     private
-        def surrounded?(string)
-            return string.match(/^".*"$/) ? true : false
-        end
-
         def surroundCommand(command)
-            '"' + command + '"'
+            return (command[0] && command[-1]).eql?('"') ? command : command.inspect
         end
 
         def sanitizeBind(bind)
