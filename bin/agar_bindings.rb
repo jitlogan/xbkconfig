@@ -3,9 +3,7 @@
 require '../xbkconfig.rb'
 
 
-# If there is predifined bindigns in file remove them, else, add them.
-
-bindList = XBKconfig.parse
+bindList = XBKconfig.parse(File.read("/tmp/test01.txt"))
 
 def writeXbindkeysrc(string)
     # File.open("#{ENV['HOME']}/.xbindkeysrc", "w") do |file|
@@ -14,11 +12,32 @@ def writeXbindkeysrc(string)
     end
 end
 
-if %w(b:2 b:8 b:9).all?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
+agarBindings = %w(b:2 b:8 b:9)
+if agarBindings.all?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
     # Remove bindings
     writeString = ""
+    
+    # bindList.each do |node|
+    #     bindList.delete(node) if %(b:2 b:8 b:9).any?{|bind| node.bind.eql?(bind)}
+    # end
+    bindList.delete_if do |node|
+        agarBindings.any? do |bind|
+            node.bind.match /#{Regexp.escape(bind)}/
+        end
+    end
 
-    writeString = `xbindkeys -d`
+    # writeString += "\n" if writeString[-1].eql?("\n")
+
+    bindList.each_with_index do |node, index|
+        writeString += "#{node.command}\n"
+        writeString += "  #{node.bind}"
+        writeString += "\n\n" unless index.eql?(bindList.size - 1)
+    end
+
+    writeXbindkeysrc(writeString)
+
+    
+    
 else
     list = XBKconfig::NodeList.new
 
@@ -34,6 +53,8 @@ else
     end
 
     writeString = ""
+
+    bindList.each{|node| writeString += "#{node.command}\n"; writeString += "  #{node.bind}\n\n"} unless bindList.empty?
 
     list.each_with_index do |node, index|
         writeString += "#{node.command}\n"
