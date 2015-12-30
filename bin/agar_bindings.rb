@@ -1,19 +1,27 @@
 #!/usr/bin/env ruby
 
 require '../xbkconfig.rb'
+require 'scriptster'
 
 
-bindList = XBKconfig.parse(File.read("/tmp/test01.txt"))
+bindList = XBKconfig.parse()
 
 def writeXbindkeysrc(string)
-    # File.open("#{ENV['HOME']}/.xbindkeysrc", "w") do |file|
-    File.open("/tmp/test01.txt", "w") do |file|
+    File.open("#{ENV['HOME']}/.xbindkeysrc", "w") do |file|
+    # File.open("/tmp/test01.txt", "w") do |file|
         file.write(string)
     end
 end
 
+def restartXbindkeys(action)
+    Scriptster.cmd("killall xbindkeys")
+    Scriptster.cmd("xbindkeys")
+    Scriptster.log(:info, "xbindkeys restarted | #{action} agar.io bindings")
+end
+
 agarBindings = %w(b:2 b:8 b:9)
-if agarBindings.all?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
+# if agarBindings.all?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
+if bindList.kind_of?(Array) && agarBindings.any?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
     # Remove bindings
     writeString = ""
     
@@ -22,7 +30,7 @@ if agarBindings.all?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
     # end
     bindList.delete_if do |node|
         agarBindings.any? do |bind|
-            node.bind.match /#{Regexp.escape(bind)}/
+            node.bind.eql?(bind)
         end
     end
 
@@ -35,9 +43,8 @@ if agarBindings.all?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
     end
 
     writeXbindkeysrc(writeString)
+    restartXbindkeys("removing")
 
-    
-    
 else
     list = XBKconfig::NodeList.new
 
@@ -63,4 +70,5 @@ else
     end
 
     writeXbindkeysrc(writeString)
+    restartXbindkeys("adding")
 end
