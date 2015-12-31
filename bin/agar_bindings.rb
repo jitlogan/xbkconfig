@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require '../xbkconfig.rb'
+require_relative '../xbkconfig.rb'
 require 'scriptster'
 
 

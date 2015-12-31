@@ -24,8 +24,13 @@ class XBKconfig
 
     def self.parse(string = File.read(File.expand_path("#{ENV['HOME']}/.xbindkeysrc")))
         list = XBKconfig::NodeList.new
-        self::Transform.new.apply(self::Parser.new.parse(string)).each do |bindEntry|
-            list.add(XBKconfig::Node.new(bindEntry[:command], bindEntry[:bind]))    
+        preParseString = self::Transform.new.apply(self::Parser.new.parse(string))
+        unless preParseString.kind_of?(Array)
+            list = ""
+        else
+            self::Transform.new.apply(self::Parser.new.parse(string)).each do |bindEntry|
+                list.add(XBKconfig::Node.new(bindEntry[:command], bindEntry[:bind]))    
+            end
         end
         return list
     end
