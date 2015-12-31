@@ -8,42 +8,51 @@ bindList = XBKconfig.parse()
 
 def writeXbindkeysrc(string)
     File.open("#{ENV['HOME']}/.xbindkeysrc", "w") do |file|
-    # File.open("/tmp/test01.txt", "w") do |file|
         file.write(string)
     end
 end
 
-def restartXbindkeys(action)
-    Scriptster.cmd("killall xbindkeys")
-    Scriptster.cmd("xbindkeys")
-    Scriptster.log(:info, "xbindkeys restarted | #{action} agar.io bindings")
+def restartXbindkeys(command)
+    raise ArgumentError unless command[:action].eql?(:kill) || command[:action].eql?(:restart)
+
+    def xb_kill()
+        Scriptster.cmd "pkill xbindkeys", raise: false
+        Scriptster.log :info, "no entries in config | killing xbindkeys"
+    end
+
+    def xb_restart(message)
+        Scriptster.cmd "pkill xbindkeys", raise: false
+        Scriptster.cmd "xbindkeys"
+        Scriptster.log :info, "#{message} | xbindkeys restarted"
+    end
+
+    xb_kill if command[:action].eql?(:kill)
+    xb_restart(command[:message]) if command[:action].eql?(:restart)
 end
 
 agarBindings = %w(b:2 b:8 b:9)
-# if agarBindings.all?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
 if bindList.kind_of?(Array) && agarBindings.any?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
-    # Remove bindings
     writeString = ""
     
-    # bindList.each do |node|
-    #     bindList.delete(node) if %(b:2 b:8 b:9).any?{|bind| node.bind.eql?(bind)}
-    # end
     bindList.delete_if do |node|
         agarBindings.any? do |bind|
             node.bind.eql?(bind)
         end
     end
 
-    # writeString += "\n" if writeString[-1].eql?("\n")
+    unless bindList.empty?
+        bindList.each_with_index do |node, index|
+            writeString += "#{node.command}\n"
+            writeString += "  #{node.bind}"
+            writeString += "\n\n" unless index.eql?(bindList.size - 1)
+        end
 
-    bindList.each_with_index do |node, index|
-        writeString += "#{node.command}\n"
-        writeString += "  #{node.bind}"
-        writeString += "\n\n" unless index.eql?(bindList.size - 1)
+        restartXbindkeys({action: :restart, message: "removing entries"})
+    else
+        restartXbindkeys({action: :kill})
     end
 
     writeXbindkeysrc(writeString)
-    restartXbindkeys("removing")
 
 else
     list = XBKconfig::NodeList.new
@@ -70,5 +79,5 @@ else
     end
 
     writeXbindkeysrc(writeString)
-    restartXbindkeys("adding")
+    restartXbindkeys({action: :restart, message: "added bindings"})
 end
