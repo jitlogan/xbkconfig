@@ -1,18 +1,27 @@
 #!/usr/bin/env ruby
 
-require_relative '../xbkconfig.rb'
 require 'scriptster'
+require_relative 'xbkconfig'
 
 
-bindList = XBKconfig.parse()
+bind_list = XBKconfig.parse
 
-def writeXbindkeysrc(string)
-    File.open("#{ENV['HOME']}/.xbindkeysrc", "w") do |file|
-        file.write(string)
+
+def add_bindings(bind_list)
+    # Constructing agar.io fire command
+    fireCommand = "xte"
+    7.times do
+        fireCommand << %Q| 'key w' 'usleep 70000'|
+    end
+
+    # Constructing list
+    [[fireCommand, "b:2"], ["", "b:8"], ["", "b:9"]].each do |pair|
+        bind_list.add(XBKconfig::Node.new(pair.first, pair.last))
     end
 end
 
-def restartXbindkeys(command)
+
+def xbindkeys(command)
     raise ArgumentError unless command[:action].eql?(:kill) || command[:action].eql?(:restart)
 
     def xb_kill()
@@ -30,54 +39,35 @@ def restartXbindkeys(command)
     xb_restart(command[:message]) if command[:action].eql?(:restart)
 end
 
-agarBindings = %w(b:2 b:8 b:9)
-if bindList.kind_of?(Array) && agarBindings.any?{ |bind| bindList.any?{|node| node.bind.eql?(bind)} }
-    writeString = ""
-    
-    bindList.delete_if do |node|
-        agarBindings.any? do |bind|
-            node.bind.eql?(bind)
+
+def write(bind_list)
+    File.open(File.expand_path("~/.xbindkeysrc")) do |file|
+        writeString = ""
+        bind_list.each_with_index do |bind, index|
+            writeString += "#{bind.command}\n"
+            writeString += "#{bind.bind}"
+            writeString += "\n\n" if !index.eql?(bind_list - 1)
         end
+        file.write(writeString)
     end
+end
 
-    unless bindList.empty?
-        bindList.each_with_index do |node, index|
-            writeString += "#{node.command}\n"
-            writeString += "  #{node.bind}"
-            writeString += "\n\n" unless index.eql?(bindList.size - 1)
-        end
 
-        restartXbindkeys({action: :restart, message: "removing entries"})
+if !bind_list.empty?
+    # Proceed
+    # if "agar.io binds are present => remove them; else => add them"
+    if %w(b:2 b:8 b:9).any?{|bind| bind_list.any?{|node| node.bind.eql?(bind)}}
+        bind_list.delete_if{|node| %w(b:2 b:8 b:9).any?{|bind| node.bind.eql?(bind)}}
+        # write(bind_list)
+        p bind_list
     else
-        restartXbindkeys({action: :kill})
+        add_bindings(bind_list)
+        p bind_list
+        # write(bind_list)
     end
-
-    writeXbindkeysrc(writeString)
-
 else
-    list = XBKconfig::NodeList.new
-
-    fireCommand = "xte"
-    7.times do
-        fireCommand << %Q| 'key w' 'usleep 70000'|
-    end
-
-    list << XBKconfig::Node.new(fireCommand, "  b:2")
-
-    [8, 9].each do |n|
-        list << XBKconfig::Node.new("", "b:" + String(n))
-    end
-
-    writeString = ""
-
-    bindList.each{|node| writeString += "#{node.command}\n"; writeString += "  #{node.bind}\n\n"} unless bindList.empty?
-
-    list.each_with_index do |node, index|
-        writeString += "#{node.command}\n"
-        writeString += "  #{node.bind}"
-        writeString += "\n\n" unless index.eql?(list.size - 1)
-    end
-
-    writeXbindkeysrc(writeString)
-    restartXbindkeys({action: :restart, message: "added bindings"})
+    # Add binds to config
+    add_bindings(bind_list)
+    # write(bind_list)
+    p bind_list
 end

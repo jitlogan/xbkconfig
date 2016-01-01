@@ -1,38 +1,24 @@
 #!/usr/bin/env ruby
 
-require 'parslet'
+require_relative 'parser'
 
 
 class XBKconfig
 
-    class Parser < Parslet::Parser
-        rule(:newline) { str("\n") >> str("\r").maybe }
-        rule(:comment) { str("#").repeat(1) >> (newline.absent? >> any).repeat >> newline.repeat }
-
-        rule(:doubleQuote) { str('"') }
-        rule(:commandLine) { (doubleQuote >> (newline.absent? >> doubleQuote.absent? >> any).repeat >> doubleQuote).as(:command) >> match["\s"].repeat >> newline }
-
-        rule(:bind) { (newline.absent? >> doubleQuote.absent? >> any).repeat.as(:bind) >> newline.repeat }
-        rule(:bindEntry) { ( commandLine >> bind ).as(:bindEntry) }
-        rule(:main) { ( comment | bindEntry ).repeat }
-        root(:main)
-    end
-
-    class Transform < Parslet::Transform
-        rule(:bindEntry => { :command => simple(:c), :bind => simple(:b) } ) { { command: String(c), bind: String(b) } }
-    end
-
     def self.parse(string = File.read(File.expand_path("#{ENV['HOME']}/.xbindkeysrc")))
-        list = XBKconfig::NodeList.new
-        preParseString = self::Transform.new.apply(self::Parser.new.parse(string))
-        unless preParseString.kind_of?(Array)
-            list = ""
-        else
-            self::Transform.new.apply(self::Parser.new.parse(string)).each do |bindEntry|
-                list.add(XBKconfig::Node.new(bindEntry[:command], bindEntry[:bind]))    
-            end
+        bind_list = XBKconfig::NodeList.new
+
+        # Cleaning comments if present
+        parsed_string = XBKconfig::Parser::Transform.new.apply(XBKconfig::Parser::Parser.new.parse(string))
+        parsed_string.delete_if{|hash| hash.keys.eql?([:comment])} unless string.empty?
+
+        # Create nodes if string is not empty
+        unless parsed_string.empty?
+             parsed_string.each do |hash|
+                 bind_list.add(XBKconfig::Node.new(hash[:command], hash[:bind]))
+             end
         end
-        return list
+        return bind_list
     end
 
     class NodeList < Array
@@ -68,7 +54,7 @@ class XBKconfig
         end
 
         def sanitizeBind(bind)
-            bind.strip 
+            bind.strip
         end
     end
 
