@@ -8,11 +8,9 @@ class XBKconfig
     def self.parse(string = File.read(File.expand_path("#{ENV['HOME']}/.xbindkeysrc")))
         bind_list = XBKconfig::NodeList.new
 
-        # Cleaning comments if present
         parsed_string = XBKconfig::Parser::Transform.new.apply(XBKconfig::Parser::Parser.new.parse(string))
         parsed_string.delete_if{|hash| hash.keys.eql?([:comment])} unless string.empty?
 
-        # Create nodes if string is not empty
         unless parsed_string.empty?
              parsed_string.each do |hash|
                  bind_list.add(XBKconfig::Node.new(hash[:command], hash[:bind]))
