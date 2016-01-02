@@ -22,7 +22,7 @@ class XBKconfig
                 newline.repeat
             }
             rule(:bindEntry) { ( commandLine >> bind ).as(:bindEntry) }
-            rule(:main) { ( comment | bindEntry ).repeat }
+            rule(:main) { ( newline | comment | bindEntry ).repeat }
             root(:main)
         end
 
